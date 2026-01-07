@@ -1,6 +1,6 @@
 # Optimized minimalist raycast engine for ESP32
 
-Written originally in C I ported and optimized my raycast engine for the constrained resources of the ESP32.
+Written originally in C, I ported and optimized my raycast engine for the constrained resources of the ESP32.
 
 
 ## Technical details
