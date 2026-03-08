@@ -14,3 +14,4 @@ Written originally in C, I ported and optimized my raycast engine for the constr
   - Lookup tables store precalculated trigonometric results for quick access.
 3. Simple interface
   - GPIO-based 4 direction digital joystick ensures no input latency. 
+![output2](https://github.com/user-attachments/assets/1495274d-0577-4162-a918-e67cd54c5442)
