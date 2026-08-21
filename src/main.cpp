@@ -1,5 +1,7 @@
+#include <Arduino.h>
+#include <cstdlib>
+#include <cstdint>
 #include "lut.h"
-
 
 #define OLED_MOSI   23
 #define OLED_CLK    18
@@ -28,7 +30,6 @@
 // 60 / 128 * 256
 #define RAY_STEP 120
 
-
 char screen_buffer[SCREEN_HEIGHT / 8][SCREEN_WIDTH] = {0};
 
 char world[WORLD_SIZE][WORLD_SIZE] = {
@@ -50,6 +51,45 @@ char world[WORLD_SIZE][WORLD_SIZE] = {
 
     {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
+
+
+
+void clockUp(){
+  digitalWrite(OLED_CLK, HIGH);
+}
+
+void clockDown(){
+  digitalWrite(OLED_CLK, LOW);
+}
+
+
+void send_byte(char byte, int is_data){
+
+  int DC_VALUE;
+  if(is_data){
+    DC_VALUE = HIGH;
+  }
+  else{
+    DC_VALUE = LOW;
+  }
+
+  digitalWrite(OLED_DC, DC_VALUE);
+  digitalWrite(OLED_CS, LOW);
+  for(int i = 0; i < 8; i++){
+    if(byte & 0x80){
+      digitalWrite(OLED_MOSI, HIGH);
+    }
+    else{
+      digitalWrite(OLED_MOSI, LOW);
+    }
+    clockUp();
+    clockDown();
+    byte = byte << 1;
+  }
+  digitalWrite(OLED_DC, !DC_VALUE);
+  digitalWrite(OLED_CS, HIGH);
+
+}
 
 int check_grid(int x, int y){
     int grid_x, grid_y;
@@ -321,41 +361,7 @@ void setup() {
 
 }
 
-void clockUp(){
-  digitalWrite(OLED_CLK, HIGH);
-}
 
-void clockDown(){
-  digitalWrite(OLED_CLK, LOW);
-}
-
-void send_byte(char byte, int is_data){
-
-  int DC_VALUE;
-  if(is_data){
-    DC_VALUE = HIGH;
-  }
-  else{
-    DC_VALUE = LOW;
-  }
-
-  digitalWrite(OLED_DC, DC_VALUE);
-  digitalWrite(OLED_CS, LOW);
-  for(int i = 0; i < 8; i++){
-    if(byte & 0x80){
-      digitalWrite(OLED_MOSI, HIGH);
-    }
-    else{
-      digitalWrite(OLED_MOSI, LOW);
-    }
-    clockUp();
-    clockDown();
-    byte = byte << 1;
-  }
-  digitalWrite(OLED_DC, !DC_VALUE);
-  digitalWrite(OLED_CS, HIGH);
-
-}
 
 int px = 36;
 int py = 36;
