@@ -36,10 +36,10 @@ const char world[WORLD_SIZE][WORLD_SIZE] = {
 };
 
 static inline int normalise_angle_degrees(int degree){
-    if(degree > 360){
+    if(degree >= 360){
         return degree - 360;
     }
-    if(degree < 0){
+    else if(degree < 0){
         return 360 + degree;
     }
     return degree;
