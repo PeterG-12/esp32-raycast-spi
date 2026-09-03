@@ -14,11 +14,11 @@ Written originally in C, I ported and optimized my raycast engine for the constr
 3. Simple interface
   - GPIO-based 4 direction digital joystick ensures no input latency.
 4. Benchmarking, comparison to hardware SPI
-  - The project demonstrates that, as expected when using the hardware SPI even without careful optimisation, speedups of up to 10x can be experienced
+  - The project demonstrates that, as expected when using the hardware SPI even without careful optimization, speedups of up to 10x can be experienced
   - According to the benchmarks:
     | Driver | Transfer Strategy | Observed Frame Rate |
     | --- | --- | --- |
-    | **Software SPI (Bit-banging)** | Byte-by-byte GPIO toggling | **85 - 95 FPS** |
-    | **Hardware SPI (`SPI.h`)** | 1024-byte contiguous bulk push | **750 - 850 FPS FPS** |
+    | Software SPI (Bit-banging) | Byte-by-byte GPIO toggling | 85 - 95 FPS |
+    | Hardware SPI (`SPI.h`) | 1024-byte contiguous bulk push | 750 - 850 FPS FPS |
 
 ![output2](https://github.com/user-attachments/assets/1495274d-0577-4162-a918-e67cd54c5442)
