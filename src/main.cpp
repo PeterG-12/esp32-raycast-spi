@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <cstdlib>
 #include <cstdint>
-#include "lut.h"
+#include "cast_math.h"
 
 #define OLED_MOSI   23
 #define OLED_CLK    18
@@ -16,49 +16,19 @@
 
 #define DEBUG 0
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
 
-#define BLOCK_SIZE 32
-
-#define WORLD_SIZE 15
-#define FOV_DEGREES 60
-
-// Could be 128?
-#define DISTANCE_TO_PROJECTION 110 // = SCREEN_WIDTH / tan(30deg)
-
-// 60 / 128 * 256
-#define RAY_STEP 120
 
 char screen_buffer[SCREEN_HEIGHT / 8][SCREEN_WIDTH] = {0};
 
-char world[WORLD_SIZE][WORLD_SIZE] = {
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,1,1,0,0,0,0,0,1},
-    {1,0,0,1,1,1,1,1,1,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-};
 
 
 
-void clockUp(){
+
+static inline void clockUp(){
   digitalWrite(OLED_CLK, HIGH);
 }
 
-void clockDown(){
+static inline void clockDown(){
   digitalWrite(OLED_CLK, LOW);
 }
 
@@ -91,164 +61,6 @@ void send_byte(char byte, int is_data){
 
 }
 
-int check_grid(int x, int y){
-    int grid_x, grid_y;
-    grid_x = (x / BLOCK_SIZE);
-    grid_y = (y / BLOCK_SIZE);
-
-    if(grid_x >= WORLD_SIZE || grid_y >= WORLD_SIZE || grid_x < 0 || grid_y < 0){
-        return 1;
-    }
-
-    return world[grid_y][grid_x];
-}
-
-
-int normalise_angle_degrees(int degree){
-    if(degree > 360){
-        return degree - 360;
-    }
-    if(degree < 0){
-        return 360 + degree;
-    }
-    return degree;
-}
-
-int abs(int x){
-    if(x < 0)
-        return -x;
-
-    return x;
-}
-
-int min(int a, int b){
-    if(a < b) return a;
-    return b;
-}
-
-
-int max(int a, int b){
-    if(a > b) return a;
-    return b;
-}
-
-// Returns the wall distance
-int get_horizontal_collision(int px, int py, int ray_angle, int* horizontal_hit){
-    // First horizontal contact
-    int ax, ay;
-
-    // Last horizontal contact
-    int dx, dy;
-
-    int delta_x, delta_y;
-
-    // Check horizontal distance
-    ray_angle >>= 8;
-    ray_angle = normalise_angle_degrees(ray_angle);
-
-    if((ray_angle < 180) && (ray_angle >= 0)){
-        ay = ((py / BLOCK_SIZE)) * BLOCK_SIZE - 1;
-        delta_y = -BLOCK_SIZE;
-    }
-    else{
-        ay = ((py / BLOCK_SIZE) + 1) * BLOCK_SIZE;
-        delta_y = BLOCK_SIZE;
-    }
-
-    int cot = 0;
-    if((ray_angle > 90) && (ray_angle <= 270)){
-        cot = -abs(a_cot[ray_angle]);
-    }
-    else{
-        cot = abs(a_cot[ray_angle]);
-    }
-
-    ax = abs(ay - py) * cot;
-    ax >>= 8;
-    ax += px;
-    delta_x = BLOCK_SIZE * cot;
-    delta_x >>= 8;
-
-
-
-    dx = ax;
-    dy = ay;
-    *horizontal_hit = 0;
-
-    while(*horizontal_hit == 0){
-        *horizontal_hit = check_grid(dx, dy);
-        dx += delta_x;
-        dy += delta_y;
-    }
-
-    //Distance (distorted)
-    int d = abs(dy - py) * abs(a_sin_iv[ray_angle]);
-    d >>= 8;
-    return d;
-}
-
-// Returns the wall distance
-int get_vertical_collision(int px, int py, int ray_angle, int* vertical_hit){
-    // First vertical contact
-    int bx, by;
-
-    // Last vertical contact
-    int ex, ey;
-
-    int delta_x, delta_y;
-
-    ray_angle >>= 8;
-    ray_angle = normalise_angle_degrees(ray_angle);
-
-    // Check vertical distance
-
-
-    if((ray_angle < 90) || (ray_angle >= 270)){
-        bx = ((px / BLOCK_SIZE) + 1) * BLOCK_SIZE;
-        delta_x = BLOCK_SIZE;
-
-    }
-    else{
-        bx = ((px / BLOCK_SIZE)) * BLOCK_SIZE - 1;
-        delta_x = -BLOCK_SIZE;
-
-    }
-
-
-
-    int tan = 0;
-    if((ray_angle > 0) && (ray_angle <= 180)){
-        tan = -abs(a_tan[ray_angle]);
-    }
-    else{
-        tan = abs(a_tan[ray_angle]);
-    }
-
-    by = abs(px - bx) * tan;
-    by >>= 8;
-    by += py;
-    delta_y = BLOCK_SIZE * tan;
-    delta_y >>= 8;
-
-
-
-    ex = bx;
-    ey = by;
-    //Search until collision
-
-    *vertical_hit = 0;
-    while(*vertical_hit == 0){
-        *vertical_hit = check_grid(ex, ey);
-        ex += delta_x;
-        ey += delta_y;
-    }
-
-    //Distance (distorted)
-    int d = abs(ex - px) * abs(a_cos_iv[ray_angle]);
-    d >>= 8;
-    return d;
-}
-
 void print_buf(){
 
     for(int i = 0; i < SCREEN_HEIGHT / 8; i++){
@@ -266,14 +78,14 @@ void draw_screen(int px, int py, int view_angle){
 
     int switch_var = 0;
 
-    int* horizontal_hit = (int*)malloc(sizeof(int));
-    int* vertical_hit = (int*)malloc(sizeof(int));
+    int horizontal_hit = 0;
+    int vertical_hit = 0;
     for(int i = 0; i < 128; i++){
 
-        int horizontal_distance = get_horizontal_collision(px, py, ray_angle, horizontal_hit);
+        int horizontal_distance = get_horizontal_collision(px, py, ray_angle, &horizontal_hit);
 
-        int vertical_distance = get_vertical_collision(px, py, ray_angle, vertical_hit);
-        int min_dist = min(horizontal_distance, vertical_distance);
+        int vertical_distance = get_vertical_collision(px, py, ray_angle, &vertical_hit);
+        int min_dist = cast_min(horizontal_distance, vertical_distance);
 
 
         int beta = (ray_angle >> 8) - view_angle;
@@ -292,10 +104,10 @@ void draw_screen(int px, int py, int view_angle){
         int hit_block;
 
         if(min_dist == vertical_distance){
-            hit_block = *vertical_hit;
+            hit_block = vertical_hit;
         }
         else{
-            hit_block = *horizontal_hit;
+            hit_block = horizontal_hit;
         }
         for(int16_t j = 0; j < SCREEN_HEIGHT / 8; j++){
             unsigned char mask = 0x00;
@@ -313,8 +125,6 @@ void draw_screen(int px, int py, int view_angle){
         ray_angle += RAY_STEP;
     }
     print_buf();
-    free(vertical_hit);
-    free(horizontal_hit);
 }
 
 
